@@ -3,94 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logistics Pro | Registro</title>
+    <title>Logistics Pro | Registro Especializado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; }
-        .glass { background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        input, select { background: #1e293b !important; border: 1px solid #334155 !important; color: white !important; transition: all 0.2s; }
-        input:focus, select:focus { border-color: #3b82f6 !important; outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        .glass { background: #0f172a; border: 1px solid #1e293b; }
+        select, input, textarea { background: #1e293b !important; border: 1px solid #334155 !important; color: white !important; transition: all 0.2s; }
+        select:focus, input:focus, textarea:focus { border-color: #3b82f6 !important; outline: none; ring: 2px solid rgba(59, 130, 246, 0.1); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 100; items-center; justify-center; }
+        .modal.active { display: flex; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-    <nav class="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex gap-4 p-2 glass rounded-2xl">
+    <nav class="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex gap-4 p-2 glass rounded-2xl shadow-2xl">
         <a href="index.html" class="px-4 py-2 bg-blue-600 rounded-xl text-xs font-bold uppercase tracking-widest text-white">Registrar</a>
-        <a href="consulta.html" class="px-4 py-2 hover:bg-slate-800 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-400 transition-all">Consultar/Excel</a>
+        <a href="consulta.html" class="px-4 py-2 hover:bg-slate-800 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-400">Consultar/Excel</a>
     </nav>
 
-    <div class="w-full max-w-2xl glass rounded-3xl p-8 md:p-12 mt-12">
-        <header class="mb-10 text-center md:text-left">
-            <h1 class="text-3xl font-bold tracking-tighter flex items-center justify-center md:justify-start gap-3">
-                <i data-lucide="package-plus" class="text-blue-500"></i> REMANEJO_INPUT
-            </h1>
-            <p class="text-slate-500 mt-2 text-sm font-mono uppercase tracking-tighter">Database: Supabase Active</p>
+    <div class="w-full max-w-2xl glass rounded-3xl p-8 md:p-10 mt-12">
+        <header class="mb-8 flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tighter flex items-center gap-3">
+                    <i data-lucide="package-plus" class="text-blue-500"></i> REMANEJO_PRO
+                </h1>
+                <p class="text-slate-500 text-[10px] font-mono uppercase mt-1">Sessão de Operação Logística</p>
+            </div>
+            <button onclick="toggleModal()" class="text-[10px] bg-red-500/10 border border-red-500/20 text-red-500 px-3 py-2 rounded-lg font-bold hover:bg-red-500 hover:text-white transition-all">
+                REPORTAR ERRO
+            </button>
         </header>
 
-        <form id="formRegistro" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Tag CB</label>
-                    <input type="text" id="tag_cb" required placeholder="Ex: CB-100" class="w-full p-4 rounded-2xl text-sm font-mono">
+        <form id="formRegistro" class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">TAG CB</label>
+                    <select id="tag_cb" required class="w-full p-3 rounded-xl text-sm appearance-none">
+                        <option value="">Selecione o CB</option>
+                        <option>CB-1049</option><option>CB-1050</option><option>CB-1051</option>
+                        <option>CB-1052</option><option>CB-1073</option><option>CB-1083</option>
+                        <option>CB-1129</option><option>CB-1138</option><option>CB-2006</option>
+                    </select>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Material</label>
-                    <input type="text" id="material" required placeholder="Descrição do item" class="w-full p-4 rounded-2xl text-sm">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Origem</label>
-                    <input type="text" id="origem" required placeholder="Local de Saída" class="w-full p-4 rounded-2xl text-sm">
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Destino</label>
-                    <input type="text" id="destino" required placeholder="Local de Chegada" class="w-full p-4 rounded-2xl text-sm">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Material</label>
+                    <input type="text" id="material" required placeholder="Ex: Bobina Aço" class="w-full p-3 rounded-xl text-sm">
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                    <label class="text-[10px] font-bold text-blue-400 uppercase tracking-widest ml-1">Peso (Ton)</label>
-                    <input type="number" step="0.001" id="peso" required placeholder="0.000" class="w-full p-4 rounded-2xl text-sm font-bold text-blue-400">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Origem</label>
+                    <select id="origem" required class="w-full p-3 rounded-xl text-sm appearance-none">
+                        <option value="">Selecione a Origem</option>
+                        <option>PULMÃO</option><option>PLANTA</option><option>1000</option><option>1010</option>
+                        <option>1020</option><option>1030 OESTE</option><option>1030 LESTE</option><option>1040</option>
+                        <option>1050</option><option>1060</option><option>1070</option><option>1080</option>
+                        <option>1090</option><option>1100</option><option>1110</option><option>1120</option><option>1130</option>
+                    </select>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Turno</label>
-                    <select id="turno" class="w-full p-4 rounded-2xl text-sm cursor-pointer appearance-none">
-                        <option>1º Turno</option>
-                        <option>2º Turno</option>
-                        <option>3º Turno</option>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Destino</label>
+                    <select id="destino" required class="w-full p-3 rounded-xl text-sm appearance-none">
+                        <option value="">Selecione o Destino</option>
+                        <option>PULMÃO</option><option>PLANTA</option><option>1000</option><option>1010</option>
+                        <option>1020</option><option>1030 OESTE</option><option>1030 LESTE</option><option>1040</option>
+                        <option>1050</option><option>1060</option><option>1070</option><option>1080</option>
+                        <option>1090</option><option>1100</option><option>1110</option><option>1120</option><option>1130</option>
                     </select>
                 </div>
             </div>
 
-            <button type="submit" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl text-white font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl transition-all active:scale-95">
-                <i data-lucide="save"></i> Salvar Registro
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-blue-400 uppercase ml-1">Peso (kg)</label>
+                    <input type="number" step="0.001" id="peso" required placeholder="0.000" class="w-full p-3 rounded-xl text-sm font-bold">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Turno</label>
+                    <select id="turno" class="w-full p-3 rounded-xl text-sm">
+                        <option>1º Turno</option><option>2º Turno</option><option>3º Turno</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl text-white font-bold text-sm uppercase tracking-widest shadow-lg transition-all active:scale-95">
+                Salvar Registro
             </button>
         </form>
     </div>
 
-    <script>
-        // Inicialização dos ícones (com segurança caso a lib falhe)
-        try { lucide.createIcons(); } catch(e) { console.error("Lucide failed", e); }
+    <div id="modalEmail" class="modal">
+        <div class="glass w-full max-w-md p-6 rounded-3xl space-y-4 border-t-4 border-red-500">
+            <h2 class="text-lg font-bold flex items-center gap-2"><i data-lucide="mail" class="text-red-500"></i> Corrigir Lançamento</h2>
+            <p class="text-xs text-slate-400 italic">Para: samuelnjs54@gmail.com</p>
+            <textarea id="emailCorpo" rows="5" class="w-full p-4 rounded-xl text-sm" placeholder="Descreva qual foi o erro (ex: CB errado) e informe qual o dado CORRETO..."></textarea>
+            <div class="flex gap-2">
+                <button onclick="enviarEmail()" id="btnEmail" class="flex-1 bg-red-600 p-3 rounded-xl text-xs font-bold">ENVIAR CORREÇÃO</button>
+                <button onclick="toggleModal()" class="flex-1 bg-slate-800 p-3 rounded-xl text-xs font-bold">CANCELAR</button>
+            </div>
+        </div>
+    </div>
 
-        // Suas Credenciais
+    <script>
+        lucide.createIcons();
+
+        // Configuração Supabase
         const SUPABASE_URL = 'https://lkbyphypfmouahxpzhst.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_N9X2k--CcuTcdNFUDU0K8w_wEKZaJvV';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const form = document.getElementById('formRegistro');
-        const btn = document.getElementById('btnSubmit');
-
-        form.addEventListener('submit', async (e) => {
+        // Envio do Formulário Principal
+        document.getElementById('formRegistro').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            btn.disabled = true;
-            btn.innerHTML = `PROCESSANDO...`;
+            const btn = document.getElementById('btnSubmit');
+            btn.disabled = true; btn.innerText = "SALVANDO...";
 
             const payload = {
                 tag_cb: document.getElementById('tag_cb').value,
@@ -103,23 +133,36 @@
                 horario: new Date().toLocaleTimeString('pt-BR')
             };
 
-            const { error } = await _supabase
-                .from('movimentacoes')
-                .insert([payload]);
+            const { error } = await _supabase.from('movimentacoes').insert([payload]);
 
-            if (error) {
-                console.error("Erro:", error);
-                alert("ERRO NO SUPABASE: " + error.message + "\n\n1. Verifique se a tabela 'movimentacoes' existe.\n2. Verifique se desativou o RLS.");
-                btn.disabled = false;
-                btn.innerHTML = `<i data-lucide="save"></i> Salvar Registro`;
-            } else {
-                alert("REGISTRO SALVO COM SUCESSO!");
-                form.reset();
-                btn.disabled = false;
-                btn.innerHTML = `<i data-lucide="save"></i> Salvar Registro`;
-            }
-            lucide.createIcons();
+            if (error) alert("Erro: " + error.message);
+            else { alert("✅ REGISTRO SALVO!"); e.target.reset(); }
+            btn.disabled = false; btn.innerText = "Salvar Registro";
         });
+
+        // Funções do Modal de Email
+        function toggleModal() { document.getElementById('modalEmail').classList.toggle('active'); }
+
+        async function enviarEmail() {
+            const corpo = document.getElementById('emailCorpo').value;
+            const btn = document.getElementById('btnEmail');
+            if(!corpo) return alert("Descreva o erro!");
+
+            btn.disabled = true; btn.innerText = "ENVIANDO...";
+
+            // Como HTML puro não envia email direto sem backend pesado,
+            // usamos a API Formspree (gratuita) ou redirecionamos para o cliente de email
+            // Aqui vamos usar o redirecionamento profissional 'mailto:' que abre o Outlook/Gmail do usuário
+            const subject = encodeURIComponent("CORREÇÃO DE LANÇAMENTO - SISTEMA REMANEJO");
+            const body = encodeURIComponent(corpo);
+            window.location.href = `mailto:samuelnjs54@gmail.com?subject=${subject}&body=${body}`;
+            
+            setTimeout(() => {
+                toggleModal();
+                btn.disabled = false; btn.innerText = "ENVIAR CORREÇÃO";
+                document.getElementById('emailCorpo').value = "";
+            }, 1000);
+        }
     </script>
 </body>
 </html>
