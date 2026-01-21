@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logistics Intelligence | Consulta Supabase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://lucide.dev/icons/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .glass { background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        input { background: #1e293b !important; border: 1px solid #334155 !important; color: white !important; }
+        input:focus { border-color: #3b82f6 !important; outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass p-6 rounded-3xl">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-blue-600 rounded-2xl shadow-lg shadow-blue-900/40">
+                    <i data-lucide="database" class="text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">DATA EXPLORER</h1>
+                    <p class="text-slate-500 text-[10px] uppercase tracking-widest font-bold">Gerenciamento de Remanejo Supabase</p>
+                </div>
+            </div>
+            <button onclick="exportarExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 transition-all transform active:scale-95 shadow-xl shadow-emerald-900/20">
+                <i data-lucide="download-cloud"></i> EXPORTAR PLANILHA FORMATADA
+            </button>
+        </header>
+
+        <div class="glass p-6 rounded-3xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="space-y-2">
+                <label class="text-[10px] font-extrabold text-slate-500 uppercase flex items-center gap-2">
+                    <i data-lucide="tag" size="12"></i> Filtrar TAG CB
+                </label>
+                <input type="text" id="f_tag" oninput="filtrar()" placeholder="Pesquisar CB..." class="w-full p-3 rounded-xl text-sm transition-all">
+            </div>
+            <div class="space-y-2">
+                <label class="text-[10px] font-extrabold text-slate-500 uppercase flex items-center gap-2">
+                    <i data-lucide="box" size="12"></i> Filtrar Material
+                </label>
+                <input type="text" id="f_mat" oninput="filtrar()" placeholder="Nome do material..." class="w-full p-3 rounded-xl text-sm transition-all">
+            </div>
+            <div class="space-y-2">
+                <label class="text-[10px] font-extrabold text-slate-500 uppercase flex items-center gap-2">
+                    <i data-lucide="calendar" size="12"></i> Filtrar Data
+                </label>
+                <input type="text" id="f_data" oninput="filtrar()" placeholder="DD/MM/AAAA" class="w-full p-3 rounded-xl text-sm transition-all">
+            </div>
+            <div class="space-y-2">
+                <label class="text-[10px] font-extrabold text-slate-500 uppercase flex items-center gap-2">
+                    <i data-lucide="clock" size="12"></i> Filtrar Horário
+                </label>
+                <input type="text" id="f_hora" oninput="filtrar()" placeholder="00:00:00" class="w-full p-3 rounded-xl text-sm transition-all">
+            </div>
+        </div>
+
+        <div class="glass rounded-3xl overflow-hidden shadow-2xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead class="bg-slate-900/80 text-slate-400 border-b border-slate-800">
+                        <tr>
+                            <th class="p-5 font-bold uppercase text-[11px]">TAG CB</th>
+                            <th class="p-5 font-bold uppercase text-[11px]">Material</th>
+                            <th class="p-5 font-bold uppercase text-[11px]">Origem</th>
+                            <th class="p-5 font-bold uppercase text-[11px]">Destino</th>
+                            <th class="p-5 font-bold uppercase text-[11px] text-blue-400">Peso (kg)</th>
+                            <th class="p-5 font-bold uppercase text-[11px]">Turno</th>
+                            <th class="p-5 font-bold uppercase text-[11px]">Data</th>
+                            <th class="p-5 font-bold uppercase text-[11px]">Horário</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaCorpo" class="divide-y divide-slate-800/50">
+                        </tbody>
+                </table>
+            </div>
+            <div id="loader" class="p-20 text-center flex flex-col items-center gap-4">
+                <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-slate-500 animate-pulse font-mono text-sm tracking-tighter">ESTABLISHING_SECURE_CONNECTION...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        // Suas Credenciais Integradas
+        const SUPABASE_URL = 'https://lkbyphypfmouahxpzhst.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_N9X2k--CcuTcdNFUDU0K8w_wEKZaJvV';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let dadosCompletos = [];
+        let dadosFiltrados = [];
+
+        async function carregarDados() {
+            const { data, error } = await _supabase
+                .from('movimentacoes')
+                .select('*')
+                .order('id', { ascending: false });
+
+            if (error) {
+                document.getElementById('loader').innerHTML = `<span class="text-red-500 font-bold">ERRO AO CONECTAR: ${error.message}</span>`;
+                return;
+            }
+
+            dadosCompletos = data;
+            dadosFiltrados = data;
+            document.getElementById('loader').classList.add('hidden');
+            renderizarTabela(dadosCompletos);
+        }
+
+        function renderizarTabela(dados) {
+            const corpo = document.getElementById('tabelaCorpo');
+            if(dados.length === 0) {
+                corpo.innerHTML = `<tr><td colspan="8" class="p-10 text-center text-slate-600">Nenhum registro encontrado com estes filtros.</td></tr>`;
+                return;
+            }
+            corpo.innerHTML = dados.map(item => `
+                <tr class="hover:bg-blue-600/5 transition-all">
+                    <td class="p-5 font-mono text-blue-400 font-bold italic">${item.tag_cb}</td>
+                    <td class="p-5 font-semibold text-slate-200">${item.material}</td>
+                    <td class="p-5 text-slate-400">${item.origem}</td>
+                    <td class="p-5 text-slate-400">${item.destino}</td>
+                    <td class="p-5 font-bold text-emerald-400">${parseFloat(item.peso).toFixed(3)}</td>
+                    <td class="p-5"><span class="bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-[10px] font-bold">${item.turno}</span></td>
+                    <td class="p-5 text-slate-400">${item.data}</td>
+                    <td class="p-5 text-slate-500 font-mono text-[11px]">${item.horario}</td>
+                </tr>
+            `).join('');
+        }
+
+        function filtrar() {
+            const fTag = document.getElementById('f_tag').value.toLowerCase();
+            const fMat = document.getElementById('f_mat').value.toLowerCase();
+            const fData = document.getElementById('f_data').value.toLowerCase();
+            const fHora = document.getElementById('f_hora').value.toLowerCase();
+
+            dadosFiltrados = dadosCompletos.filter(item => 
+                String(item.tag_cb).toLowerCase().includes(fTag) &&
+                String(item.material).toLowerCase().includes(fMat) &&
+                String(item.data).toLowerCase().includes(fData) &&
+                String(item.horario).toLowerCase().includes(fHora)
+            );
+
+            renderizarTabela(dadosFiltrados);
+        }
+
+        async function exportarExcel() {
+            const workbook = new ExcelJS.Workbook();
+            const ws = workbook.addWorksheet('MOVIMENTAÇÕES');
+
+            // 1. Título (Formatação idêntica à imagem)
+            ws.mergeCells('A1:H1');
+            const title = ws.getCell('A1');
+            title.value = 'MOVIMENTAÇÕES REMANEJO DE PRODUTOS';
+            title.font = { name: 'Arial', bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+            title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0070C0' } }; // Azul Royal
+            title.alignment = { horizontal: 'center', vertical: 'middle' };
+            ws.getRow(1).height = 30;
+
+            // 2. Cabeçalho das Colunas (Azul Acinzentado da imagem)
+            const headers = ['TAG CB', 'MATERIAL', 'ORIGEM', 'DESTINO', 'PESO', 'TURNO', 'DATA', 'HORÁRIO'];
+            const headerRow = ws.addRow(headers);
+            headerRow.eachCell(cell => {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+                cell.font = { bold: true, size: 11 };
+                cell.border = { top:{style:'thin'}, left:{style:'thin'}, bottom:{style:'thin'}, right:{style:'thin'} };
+                cell.alignment = { horizontal: 'center' };
+            });
+
+            // 3. Dados (Azul claro da imagem)
+            dadosFiltrados.forEach(item => {
+                const row = ws.addRow([
+                    item.tag_cb, item.material, item.origem, item.destino, item.peso, item.turno, item.data, item.horario
+                ]);
+                row.eachCell(cell => {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEBF1DE' } }; // Alternando para visibilidade ou Azul D9E1F2
+                    cell.border = { top:{style:'thin'}, left:{style:'thin'}, bottom:{style:'thin'}, right:{style:'thin'} };
+                });
+            });
+
+            ws.columns.forEach(col => col.width = 18);
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Relatorio_Logistica_${new Date().toLocaleDateString()}.xlsx`);
+        }
+
+        carregarDados();
+    </script>
+</body>
+</html>
